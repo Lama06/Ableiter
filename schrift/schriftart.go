@@ -28,7 +28,7 @@ func init() {
 	}
 
 	NormaleSchriftart, err = opentype.NewFace(robotoSchriftart, &opentype.FaceOptions{
-		Size: 30,
+		Size: 40,
 		DPI:  dpi,
 	})
 	if err != nil {

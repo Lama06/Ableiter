@@ -2,7 +2,8 @@ package funktion
 
 import (
 	"strconv"
-	"strings"
+
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type Potenz struct {
@@ -10,23 +11,16 @@ type Potenz struct {
 	Exponent int
 }
 
-func ParsePotenz(text string) Funktion {
-	if !strings.Contains(text, "**") {
+func liesPotenz(text string) Funktion {
+	schnipsel := schneidenAußerhalbvonKlammern(text, '^')
+	if len(schnipsel) != 2 {
 		return nil
 	}
-	potenz := strings.Split(text, "**")
-	if len(potenz) < 2 {
-		return nil
-	}
-	var basisText strings.Builder
-	for i := 0; i < len(potenz)-1; i++ {
-		basisText.WriteString(potenz[i])
-	}
-	basis := Parse(basisText.String())
+	basis := Lesen(schnipsel[0].inhalt)
 	if basis == nil {
 		return nil
 	}
-	exponent, err := strconv.Atoi(potenz[len(potenz)-1])
+	exponent, err := strconv.Atoi(schnipsel[1].inhalt)
 	if err != nil {
 		return nil
 	}
@@ -58,4 +52,31 @@ func (p Potenz) Vereinfachen() Funktion {
 		Basis:    p.Basis.Vereinfachen(),
 		Exponent: p.Exponent,
 	}
+}
+
+func basisZeichnen(f Funktion) *ebiten.Image {
+	bild := f.Zeichnen()
+	switch fTypisiert := f.(type) {
+	case *Konstante:
+		if benötigtKonstanteKlammern(fTypisiert) {
+			return umklammern(bild)
+		}
+	case Quotient, Summe, Produkt, Potenz:
+		return umklammern(bild)
+	}
+	return bild
+}
+
+func (p Potenz) Zeichnen() *ebiten.Image {
+	exponentBild := NeueKonstanteGanzzahl(p.Exponent).Zeichnen()
+	basisBild := basisZeichnen(p.Basis)
+	breite := exponentBild.Bounds().Dx() + basisBild.Bounds().Dx()
+	höhe := max(exponentBild.Bounds().Dy(), basisBild.Bounds().Dy()) + 10
+	img := ebiten.NewImage(breite, höhe)
+	var basisOptionen, exponentOptionen ebiten.DrawImageOptions
+	basisOptionen.GeoM.Translate(0, 10)
+	exponentOptionen.GeoM.Translate(float64(basisBild.Bounds().Dx()), 0)
+	img.DrawImage(basisBild, &basisOptionen)
+	img.DrawImage(exponentBild, &exponentOptionen)
+	return img
 }

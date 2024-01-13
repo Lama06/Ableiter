@@ -1,38 +1,38 @@
 package main
 
 import (
-	"github.com/Lama06/Ableiter/funktion"
-	"github.com/Lama06/Ableiter/graphik"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
+type screen interface {
+	update()
+
+	draw(screen *ebiten.Image)
+}
+
 type Spiel struct {
+	aktuellerScreen screen
 }
 
 func (s *Spiel) Update() error {
+	s.aktuellerScreen.update()
 	return nil
-
 }
 
 func (s *Spiel) Draw(screen *ebiten.Image) {
-	summe := funktion.Kosinus{
-		Argument: funktion.Summe{
-			funktion.Summand{false, funktion.Identität{}},
-			funktion.Summand{true, funktion.Potenz{
-				Basis:    funktion.Identität{},
-				Exponent: 3,
-			}},
-		},
-	}.Ableiten().Vereinfachen()
-	screen.DrawImage(graphik.FunktionZeichnen(summe), nil)
+	s.aktuellerScreen.draw(screen)
 }
 
+const breite, höhe = 1920, 1080
+
 func (s *Spiel) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return 1920, 1080
+	return breite, höhe
 }
 
 func main() {
 	ebiten.SetFullscreen(true)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-	ebiten.RunGame(&Spiel{})
+	ebiten.RunGame(&Spiel{
+		aktuellerScreen: neuerAbleiterScreen(),
+	})
 }
